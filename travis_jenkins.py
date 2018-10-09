@@ -13,6 +13,8 @@ import sys
 
 from os import environ as env
 
+print 'start travis_jenkins.py 0'
+
 CONFIGURE_XML = '''<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
@@ -203,6 +205,7 @@ EOL
 
 BUILD_SET_CONFIG= 'job/%(name)s/%(number)d/configSubmit'
 
+print 'start travis_jenkins.py 1'
 class Jenkins(jenkins.Jenkins):
     # http://blog.keshi.org/hogememo/2012/12/14/jenkins-setting-build-info
     def set_build_config(self, name, number, display_name, description): # need to allow anonymous user to update build 
@@ -280,6 +283,7 @@ def wait_for_building(name, number):
         time.sleep(sleep)
         loop += 1
 
+print 'start travis_jenkins.py 2'
 ##
 TRAVIS_BRANCH = env.get('TRAVIS_BRANCH')
 TRAVIS_COMMIT = env.get('TRAVIS_COMMIT', 'HEAD')
@@ -342,6 +346,7 @@ NUMBER_OF_LOGS_TO_KEEP = %(NUMBER_OF_LOGS_TO_KEEP)s
 REPOSITORY_NAME = %(REPOSITORY_NAME)s
 ''' % locals())
 
+print 'start travis_jenkins.py 3'
 if env.get('ROS_DISTRO') == 'hydro':
     LSB_RELEASE = '12.04'
     UBUNTU_DISTRO = 'precise'
@@ -358,8 +363,10 @@ else:
     LSB_RELEASE = '14.04'
     UBUNTU_DISTRO = 'trusty'
 
+print 'start travis_jenkins.py 4'
 DOCKER_IMAGE_JENKINS = env.get('DOCKER_IMAGE_JENKINS', 'ros-ubuntu:%s' % LSB_RELEASE)
 
+print 'start travis_jenkins.py 5'
 ### start here
 j = Jenkins('http://jenkins.jsk.imi.i.u-tokyo.ac.jp:8080/', 'k-okada', '22f8b1c4812dad817381a05f41bef16b')
 
@@ -403,12 +410,14 @@ if len(job_name) >= 128 : # 'jenkins+ job_naem + TRAVIS_REPO_SLUG'
 if j.job_exists(job_name) is None:
     j.create_job(job_name, jenkins.EMPTY_CONFIG_XML)
 
+print 'start travis_jenkins.py 6'
 ## if reconfigure job is already in queue, wait for more seconds...
 while [item for item in j.get_queue_info() if item['task']['name'] == job_name]:
     time.sleep(10)
 # reconfigure job
 j.reconfig_job(job_name, CONFIGURE_XML % locals())
 
+print 'start travis_jenkins.py 7'
 ## get next number and run
 build_number = j.get_job_info(job_name)['nextBuildNumber']
 TRAVIS_JENKINS_UNIQUE_ID='{}.{}'.format(TRAVIS_JOB_ID,time.time())
