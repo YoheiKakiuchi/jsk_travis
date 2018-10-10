@@ -114,6 +114,7 @@ if [ "$USE_TRAVIS" != "true" ] && [ "$ROS_DISTRO" != "hydro" -o "${USE_JENKINS}"
     pip install --user -U --upgrade setuptools -q
     pip install --user -U --upgrade requests[security] -q
     pip install --user -U python-jenkins==0.4.16 -q
+    ./.travis/test_j.py
     ./.travis/travis_jenkins.py
     exit $?
 fi
