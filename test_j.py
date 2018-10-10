@@ -373,3 +373,94 @@ else:
 
 print 'start travis_jenkins.py 4'
 DOCKER_IMAGE_JENKINS = env.get('DOCKER_IMAGE_JENKINS', 'ros-ubuntu:%s' % LSB_RELEASE)
+
+print 'start travis_jenkins.py 5'
+### start here
+j = Jenkins('http://jenkins.jsk.imi.i.u-tokyo.ac.jp:8080/', 'k-okada', '22f8b1c4812dad817381a05f41bef16b')
+
+# use snasi color
+if j.get_plugin_info('ansicolor'):
+    ANSICOLOR_PLUGIN_VERSION=j.get_plugin_info('ansicolor')['version']
+else:
+    print('you need to install ansi color plugin')
+# use timeout plugin
+if j.get_plugin_info('build-timeout'):
+    TIMEOUT_PLUGIN_VERSION=j.get_plugin_info('build-timeout')['version']
+else:
+    print('you need to install build_timeout plugin')
+# set job_name
+job_name = '-'.join(
+    filter(
+        bool,
+        [
+            UBUNTU_DISTRO,
+            'travis',
+            TRAVIS_REPO_SLUG,
+            ROS_DISTRO,
+            'deb',
+            USE_DEB,
+            EXTRA_DEB,
+            NOT_TEST_INSTALL,
+            BUILD_PKGS,
+            BEFORE_SCRIPT,
+            ROS_REPOSITORY_PATH,
+        ]
+    )
+)
+job_name = re.sub(r'[^0-9A-Za-z]+', '-', job_name)
+# filename must be within 255
+if len(job_name) >= 128 : # 'jenkins+ job_naem + TRAVIS_REPO_SLUG'
+    import hashlib
+    m = hashlib.md5()
+    m.update(job_name)
+    job_name=job_name[:128]+'-'+m.hexdigest()
+
+if j.job_exists(job_name) is None:
+    j.create_job(job_name, jenkins.EMPTY_CONFIG_XML)
+
+print 'start travis_jenkins.py 6'
+## if reconfigure job is already in queue, wait for more seconds...
+while [item for item in j.get_queue_info() if item['task']['name'] == job_name]:
+    time.sleep(10)
+# reconfigure job
+j.reconfig_job(job_name, CONFIGURE_XML % locals())
+
+print 'start travis_jenkins.py 7'
+## get next number and run
+build_number = j.get_job_info(job_name)['nextBuildNumber']
+TRAVIS_JENKINS_UNIQUE_ID='{}.{}'.format(TRAVIS_JOB_ID,time.time())
+
+j.build_job(job_name, {'TRAVIS_JENKINS_UNIQUE_ID':TRAVIS_JENKINS_UNIQUE_ID, 'TRAVIS_PULL_REQUEST':TRAVIS_PULL_REQUEST, 'TRAVIS_COMMIT':TRAVIS_COMMIT})
+print('next build number is {}'.format(build_number))
+
+## wait for starting
+result = wait_for_building(job_name, build_number)
+print('start building, wait for result....')
+
+## configure description
+if TRAVIS_PULL_REQUEST != 'false':
+    github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s/pull/%(TRAVIS_PULL_REQUEST)s>PR #%(TRAVIS_PULL_REQUEST)s</a><br>'
+elif TRAVIS_BRANCH:
+    github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s/tree/%(TRAVIS_BRANCH)s>http://github.com/%(TRAVIS_REPO_SLUG)s</a><br>'
+else:
+    github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s>http://github.com/%(TRAVIS_REPO_SLUG)s</a><br>'
+
+if TRAVIS_BUILD_ID and TRAVIS_JOB_ID:
+    travis_link = 'travis <a href=http://travis-ci.org/%(TRAVIS_REPO_SLUG)s/builds/%(TRAVIS_BUILD_ID)s>Build #%(TRAVIS_BUILD_NUMBER)s</a> '+ '<a href=http://travis-ci.org/%(TRAVIS_REPO_SLUG)s/jobs/%(TRAVIS_JOB_ID)s>Job #%(TRAVIS_JOB_NUMBER)s</a><br>'
+else:
+    travis_link = 'travis <a href=http://travis-ci.org/%(TRAVIS_REPO_SLUG)s/>%(TRAVIS_REPO_SLUG)s</a><br>'
+j.set_build_config(job_name, build_number, '#%(build_number)s %(TRAVIS_REPO_SLUG)s' % locals(),
+                   (github_link + travis_link +'ROS_DISTRO=%(ROS_DISTRO)s<br>USE_DEB=%(USE_DEB)s<br>') % locals())
+
+## wait for result
+result = wait_for_finished(job_name, build_number)
+
+## show console
+print j.get_build_console_output(job_name, build_number)
+print "======================================="
+print j.get_build_info(job_name, build_number)['url']
+print "======================================="
+if result == "SUCCESS" :
+    exit(0)
+else:
+    exit(1)
