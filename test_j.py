@@ -423,33 +423,33 @@ if len(job_name) >= 128 : # 'jenkins+ job_naem + TRAVIS_REPO_SLUG'
 if j.job_exists(job_name) is None:
     j.create_job(job_name, jenkins.EMPTY_CONFIG_XML)
 
-print 'start travis_jenkins.py 9'
+print 'start travis_jenkins.py 9' #### OK this
 ## if reconfigure job is already in queue, wait for more seconds...
 while [item for item in j.get_queue_info() if item['task']['name'] == job_name]:
     time.sleep(10)
 # reconfigure job
 j.reconfig_job(job_name, CONFIGURE_XML % locals())
 
-# print 'start travis_jenkins.py 10'
-# ## get next number and run
-# build_number = j.get_job_info(job_name)['nextBuildNumber']
-# TRAVIS_JENKINS_UNIQUE_ID='{}.{}'.format(TRAVIS_JOB_ID,time.time())
+print 'start travis_jenkins.py 10'
+## get next number and run
+build_number = j.get_job_info(job_name)['nextBuildNumber']
+TRAVIS_JENKINS_UNIQUE_ID='{}.{}'.format(TRAVIS_JOB_ID,time.time())
 
-# j.build_job(job_name, {'TRAVIS_JENKINS_UNIQUE_ID':TRAVIS_JENKINS_UNIQUE_ID, 'TRAVIS_PULL_REQUEST':TRAVIS_PULL_REQUEST, 'TRAVIS_COMMIT':TRAVIS_COMMIT})
-# print('next build number is {}'.format(build_number))
+j.build_job(job_name, {'TRAVIS_JENKINS_UNIQUE_ID':TRAVIS_JENKINS_UNIQUE_ID, 'TRAVIS_PULL_REQUEST':TRAVIS_PULL_REQUEST, 'TRAVIS_COMMIT':TRAVIS_COMMIT})
+print('next build number is {}'.format(build_number))
 
-# print 'start travis_jenkins.py 11'
-# ## wait for starting
-# result = wait_for_building(job_name, build_number)
-# print('start building, wait for result....')
+print 'start travis_jenkins.py 11'
+## wait for starting
+result = wait_for_building(job_name, build_number)
+print('start building, wait for result....')
 
-# ## configure description
-# if TRAVIS_PULL_REQUEST != 'false':
-#     github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s/pull/%(TRAVIS_PULL_REQUEST)s>PR #%(TRAVIS_PULL_REQUEST)s</a><br>'
-# elif TRAVIS_BRANCH:
-#     github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s/tree/%(TRAVIS_BRANCH)s>http://github.com/%(TRAVIS_REPO_SLUG)s</a><br>'
-# else:
-#     github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s>http://github.com/%(TRAVIS_REPO_SLUG)s</a><br>'
+## configure description
+if TRAVIS_PULL_REQUEST != 'false':
+    github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s/pull/%(TRAVIS_PULL_REQUEST)s>PR #%(TRAVIS_PULL_REQUEST)s</a><br>'
+elif TRAVIS_BRANCH:
+    github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s/tree/%(TRAVIS_BRANCH)s>http://github.com/%(TRAVIS_REPO_SLUG)s</a><br>'
+else:
+    github_link = 'github <a href=http://github.com/%(TRAVIS_REPO_SLUG)s>http://github.com/%(TRAVIS_REPO_SLUG)s</a><br>'
 
 # print 'start travis_jenkins.py 12'
 # if TRAVIS_BUILD_ID and TRAVIS_JOB_ID:
