@@ -152,6 +152,8 @@ sudo -E sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 lsb_release -a
 sudo apt-get update -q || echo Ignore error of apt-get update
+### force useing current version for all packages
+sudo apt-get dist-upgrade -q -qq -y || echo Ignore error of apt-get dist-upgrade
 sudo apt-get install -y --force-yes -q -qq python-rosdep python-wstool python-catkin-tools ros-$ROS_DISTRO-rosbash ros-$ROS_DISTRO-rospack ccache
 # setup catkin-tools option
 if [ ! "$CATKIN_TOOLS_BUILD_OPTIONS" ]; then
